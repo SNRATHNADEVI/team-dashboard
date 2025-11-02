@@ -13,7 +13,9 @@ import {
   ClipboardList,
   LogOut,
   Clock,
-  DollarSign
+  DollarSign,
+  Award,
+  Key
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
