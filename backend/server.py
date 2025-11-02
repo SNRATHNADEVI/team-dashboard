@@ -272,7 +272,7 @@ async def login(request: LoginRequest):
     user.pop("password")
     return {"user": user, "token": user["id"]}
 
-@api_router.post("/auth/register", response_model=User)
+@api_router.post("/auth/register", response_model=UserResponse)
 async def register(user_data: UserCreate):
     # Check if username exists
     existing = await db.users.find_one({"username": user_data.username})
@@ -288,16 +288,16 @@ async def register(user_data: UserCreate):
     doc = user_obj.model_dump()
     
     await db.users.insert_one(doc)
-    return user_obj
+    
+    # Return without password
+    response_dict = {k: v for k, v in doc.items() if k != 'password'}
+    return UserResponse(**response_dict)
 
 # ========== USER/TEAM MANAGEMENT ==========
 
-@api_router.get("/users", response_model=List[User])
+@api_router.get("/users", response_model=List[UserResponse])
 async def get_users():
-    users = await db.users.find({}, {"_id": 0}).to_list(1000)
-    # Remove passwords from response
-    for user in users:
-        user.pop("password", None)
+    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
     return users
 
 @api_router.get("/users/{user_id}")
