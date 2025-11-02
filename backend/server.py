@@ -977,6 +977,201 @@ async def get_attendance_summary(user_id: Optional[str] = None):
 
 # ========== GOOGLE CALENDAR SYNC ==========
 
+
+
+# ========== KUDOS SYSTEM ==========
+
+@api_router.get("/kudos/transactions")
+async def get_kudos_transactions(user_id: Optional[str] = None):
+    query = {}
+    if user_id:
+        query["user_id"] = user_id
+    transactions = await db.kudos_transactions.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return transactions
+
+@api_router.post("/kudos/transactions", response_model=KudosTransaction)
+async def create_kudos_transaction(kudos_data: KudosTransactionCreate):
+    kudos_obj = KudosTransaction(**kudos_data.model_dump())
+    doc = kudos_obj.model_dump()
+    await db.kudos_transactions.insert_one(doc)
+    return kudos_obj
+
+@api_router.get("/kudos/balance/{user_id}")
+async def get_kudos_balance(user_id: str):
+    transactions = await db.kudos_transactions.find({"user_id": user_id}, {"_id": 0}).to_list(10000)
+    total_kudos = sum(t["amount"] for t in transactions)
+    return {"user_id": user_id, "total_kudos": total_kudos, "transactions_count": len(transactions)}
+
+# ========== TRAINING SECTION ==========
+
+@api_router.get("/training/courses", response_model=List[TrainingCourse])
+async def get_training_courses():
+    courses = await db.training_courses.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return courses
+
+@api_router.post("/training/courses", response_model=TrainingCourse)
+async def create_training_course(course_data: TrainingCourseCreate):
+    course_obj = TrainingCourse(**course_data.model_dump())
+    doc = course_obj.model_dump()
+    await db.training_courses.insert_one(doc)
+    return course_obj
+
+@api_router.put("/training/courses/{course_id}")
+async def update_training_course(course_id: str, update_data: dict):
+    result = await db.training_courses.update_one({"id": course_id}, {"$set": update_data})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Course not found")
+    return {"message": "Course updated successfully"}
+
+@api_router.get("/training/progress")
+async def get_training_progress(user_id: Optional[str] = None, course_id: Optional[str] = None):
+    query = {}
+    if user_id:
+        query["user_id"] = user_id
+    if course_id:
+        query["course_id"] = course_id
+    progress = await db.training_progress.find(query, {"_id": 0}).to_list(1000)
+    return progress
+
+@api_router.post("/training/progress")
+async def enroll_training(user_id: str, user_name: str, course_id: str):
+    # Check if already enrolled
+    existing = await db.training_progress.find_one({"user_id": user_id, "course_id": course_id})
+    if existing:
+        raise HTTPException(status_code=400, detail="Already enrolled in this course")
+    
+    progress_obj = TrainingProgress(user_id=user_id, user_name=user_name, course_id=course_id)
+    doc = progress_obj.model_dump()
+    await db.training_progress.insert_one(doc)
+    return progress_obj
+
+@api_router.put("/training/progress/{progress_id}")
+async def update_training_progress(progress_id: str, update_data: TrainingProgressUpdate):
+    update_dict = update_data.model_dump(exclude_none=True)
+    
+    # If marking as completed and homework submitted, award kudos
+    if update_dict.get("homework_submitted"):
+        progress = await db.training_progress.find_one({"id": progress_id})
+        if progress and not progress.get("completed"):
+            course = await db.training_courses.find_one({"id": progress["course_id"]})
+            if course and course.get("kudos_reward", 0) > 0:
+                # Award kudos
+                kudos_obj = KudosTransaction(
+                    user_id=progress["user_id"],
+                    user_name=progress["user_name"],
+                    amount=course["kudos_reward"],
+                    reason=f"Completed training: {course['title']}",
+                    category="training_completion",
+                    given_by="system"
+                )
+                await db.kudos_transactions.insert_one(kudos_obj.model_dump())
+            update_dict["completed"] = True
+    
+    result = await db.training_progress.update_one({"id": progress_id}, {"$set": update_dict})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Progress record not found")
+    return {"message": "Progress updated successfully"}
+
+# ========== MEETINGS ==========
+
+@api_router.get("/meetings", response_model=List[Meeting])
+async def get_meetings(user_id: Optional[str] = None, meeting_type: Optional[str] = None):
+    query = {}
+    if user_id:
+        query["$or"] = [{"organizer": user_id}, {"attendees": user_id}]
+    if meeting_type:
+        query["meeting_type"] = meeting_type
+    meetings = await db.meetings.find(query, {"_id": 0}).sort("start_time", -1).to_list(1000)
+    return meetings
+
+@api_router.post("/meetings", response_model=Meeting)
+async def create_meeting(meeting_data: MeetingCreate):
+    meeting_obj = Meeting(**meeting_data.model_dump())
+    doc = meeting_obj.model_dump()
+    await db.meetings.insert_one(doc)
+    return meeting_obj
+
+@api_router.put("/meetings/{meeting_id}")
+async def update_meeting(meeting_id: str, update_data: dict):
+    result = await db.meetings.update_one({"id": meeting_id}, {"$set": update_data})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    return {"message": "Meeting updated successfully"}
+
+@api_router.post("/meetings/{meeting_id}/attendance")
+async def record_meeting_attendance(meeting_id: str, attendance_data: MeetingAttendanceCreate):
+    # Get meeting details
+    meeting = await db.meetings.find_one({"id": meeting_id})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    # Record attendance for all attendees
+    for attendee_id in meeting["attendees"]:
+        user = await db.users.find_one({"id": attendee_id})
+        if not user:
+            continue
+        
+        status = "present" if attendee_id in attendance_data.attendees_present else "absent"
+        
+        # Create attendance record
+        attendance_obj = MeetingAttendance(
+            meeting_id=meeting_id,
+            user_id=attendee_id,
+            user_name=user["name"],
+            status=status
+        )
+        await db.meeting_attendance.insert_one(attendance_obj.model_dump())
+        
+        # Deduct kudos if absent
+        if status == "absent":
+            kudos_obj = KudosTransaction(
+                user_id=attendee_id,
+                user_name=user["name"],
+                amount=-5,
+                reason=f"Missed meeting: {meeting['title']}",
+                category="meeting_attendance",
+                given_by=meeting["organizer"]
+            )
+            await db.kudos_transactions.insert_one(kudos_obj.model_dump())
+    
+    # Mark meeting as attendance tracked
+    await db.meetings.update_one({"id": meeting_id}, {"$set": {"attendance_tracked": True}})
+    
+    return {"message": "Attendance recorded successfully"}
+
+@api_router.get("/meetings/{meeting_id}/attendance")
+async def get_meeting_attendance(meeting_id: str):
+    attendance = await db.meeting_attendance.find({"meeting_id": meeting_id}, {"_id": 0}).to_list(1000)
+    return attendance
+
+# ========== SUBSCRIPTIONS ==========
+
+@api_router.get("/subscriptions", response_model=List[Subscription])
+async def get_subscriptions():
+    subscriptions = await db.subscriptions.find({}, {"_id": 0}).sort("platform", 1).to_list(1000)
+    return subscriptions
+
+@api_router.post("/subscriptions", response_model=Subscription)
+async def create_subscription(subscription_data: SubscriptionCreate):
+    subscription_obj = Subscription(**subscription_data.model_dump())
+    doc = subscription_obj.model_dump()
+    await db.subscriptions.insert_one(doc)
+    return subscription_obj
+
+@api_router.put("/subscriptions/{subscription_id}")
+async def update_subscription(subscription_id: str, update_data: dict):
+    result = await db.subscriptions.update_one({"id": subscription_id}, {"$set": update_data})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    return {"message": "Subscription updated successfully"}
+
+@api_router.delete("/subscriptions/{subscription_id}")
+async def delete_subscription(subscription_id: str):
+    result = await db.subscriptions.delete_one({"id": subscription_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    return {"message": "Subscription deleted successfully"}
+
 async def sync_to_google_calendar(event_data: CalendarEventCreate):
     """Sync event to Google Calendar"""
     try:
