@@ -13,7 +13,7 @@ import { UserPlus, Trash2, Edit } from 'lucide-react';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const roles = ['Admin', 'Tech', 'Design', 'AI', 'Cloud', 'Research', 'Content', 'Intern'];
+const roles = ['Admin', 'COO', 'CTO', 'Project Manager', 'Tech', 'Design', 'AI', 'Cloud', 'Research', 'Content', 'Intern'];
 
 const TeamManagement = ({ user, onLogout }) => {
   const [members, setMembers] = useState([]);
