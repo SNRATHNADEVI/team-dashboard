@@ -114,23 +114,23 @@ const Projects = ({ user, onLogout }) => {
   };
 
   const KanbanColumn = ({ title, status, items, color }) => (
-    <div className="flex-1 min-w-[320px] max-w-[400px]">
+    <div className="flex-shrink-0 w-[350px]">
       <div className="mb-4 flex items-center space-x-2">
         <div className="w-3 h-3 rounded-full" style={{ background: color }}></div>
         <h3 className="font-bold text-white text-lg">{title}</h3>
         <span className="text-sm text-gray-500">({items.length})</span>
       </div>
-      <div className="space-y-3 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
+      <div className="space-y-3 max-h-[calc(100vh-280px)] overflow-y-auto pr-2">
         {items.map((project) => (
-          <Card key={project.id} className="kanban-card glass-effect border-[rgba(255,215,0,0.1)]" data-testid={`project-${project.id}`}>
+          <Card key={project.id} className="kanban-card glass-effect border-[rgba(255,215,0,0.1)] w-full" data-testid={`project-${project.id}`}>
             <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-white text-base flex-1">{project.name}</CardTitle>
+              <div className="flex justify-between items-start gap-2">
+                <CardTitle className="text-white text-base flex-1 break-words">{project.name}</CardTitle>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => handleEdit(project)}
-                  className="text-blue-400 hover:text-blue-300 p-1 h-auto"
+                  className="text-blue-400 hover:text-blue-300 p-1 h-auto flex-shrink-0"
                   data-testid={`edit-project-${project.id}`}
                 >
                   <Edit size={16} />
@@ -139,7 +139,7 @@ const Projects = ({ user, onLogout }) => {
               <p className="text-xs text-gray-400 mt-1">{project.type}</p>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-400 mb-3 line-clamp-2">{project.description}</p>
+              <p className="text-sm text-gray-400 mb-3 line-clamp-2 break-words">{project.description}</p>
               
               {/* Progress Bar */}
               <div className="mb-3">
@@ -173,7 +173,7 @@ const Projects = ({ user, onLogout }) => {
                     {project.assigned_members.map((memberId, idx) => (
                       <span
                         key={idx}
-                        className="text-xs px-2 py-1 rounded bg-[rgba(255,215,0,0.1)] text-yellow-500 border border-[rgba(255,215,0,0.2)]"
+                        className="text-xs px-2 py-1 rounded bg-[rgba(255,215,0,0.1)] text-yellow-500 border border-[rgba(255,215,0,0.2)] break-words"
                       >
                         {getMemberName(memberId)}
                       </span>
