@@ -300,12 +300,11 @@ async def get_users():
     users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
     return users
 
-@api_router.get("/users/{user_id}")
+@api_router.get("/users/{user_id}", response_model=UserResponse)
 async def get_user(user_id: str):
-    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    user.pop("password", None)
     return user
 
 @api_router.put("/users/{user_id}")
