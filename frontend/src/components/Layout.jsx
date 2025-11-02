@@ -49,10 +49,7 @@ const Layout = ({ children, user, onLogout }) => {
             <img 
               src="https://customer-assets.emergentagent.com/job_25d84bc8-5cd6-4672-913d-7856f1b8c2dc/artifacts/7ukgfyx7_snr%20logo%20png.jpg"
               alt="SNR"
-              className="w-16 h-16 rounded-full border-[3px] border-[#FFD700] object-cover"
-              style={{
-                boxShadow: '0 0 15px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.3)',
-              }}
+              className="w-16 h-16 rounded-full border-[3px] border-[#FFD700] object-cover logo-glow"
             />
           </div>
           <h2 className="text-xl font-bold text-center snr-gradient bg-clip-text text-transparent">SNR</h2>
