@@ -591,8 +591,16 @@ async def get_dashboard_stats(user_id: Optional[str] = None):
     
     # User-specific stats
     if user_id:
-        stats["my_tasks"] = await db.tasks.count_documents({"assigned_to": user_id})
+        stats["my_tasks"] = await db.tasks.count_documents({"assigned_to": user_id, "status": {"$ne": "done"}})
+        stats["my_tasks_completed"] = await db.tasks.count_documents({"assigned_to": user_id, "status": "done"})
         stats["my_projects"] = await db.projects.count_documents({"assigned_members": user_id})
+        
+        # Get user's assigned tasks
+        my_assigned_tasks = await db.tasks.find(
+            {"assigned_to": user_id, "status": {"$ne": "done"}},
+            {"_id": 0}
+        ).sort("created_at", -1).limit(10).to_list(10)
+        stats["assigned_tasks"] = my_assigned_tasks
     
     # Recent activity
     recent_projects = await db.projects.find({}, {"_id": 0}).sort("created_at", -1).limit(5).to_list(5)
