@@ -15,6 +15,8 @@ import AcademyZone from "./pages/AcademyZone";
 import PersonalPlanner from "./pages/PersonalPlanner";
 import Finance from "./pages/Finance";
 import Attendance from "./pages/Attendance";
+import Training from "./pages/Training";
+import Subscriptions from "./pages/Subscriptions";
 import { Toaster } from "sonner";
 
 function App() {
@@ -63,6 +65,8 @@ function App() {
           <Route path="/planner" element={user ? <PersonalPlanner user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
           <Route path="/finance" element={user ? <Finance user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
           <Route path="/attendance" element={user ? <Attendance user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/training" element={user ? <Training user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/subscriptions" element={user ? <Subscriptions user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
     </div>
