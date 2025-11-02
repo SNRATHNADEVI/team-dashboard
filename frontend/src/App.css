@@ -73,6 +73,20 @@ body {
   border-left: 4px solid #EF4444;
 }
 
+/* Logo glow animation */
+@keyframes logo-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 215, 0, 0.4), 0 0 60px rgba(255, 215, 0, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6), 0 0 90px rgba(255, 215, 0, 0.4);
+  }
+}
+
+.logo-glow {
+  animation: logo-glow 3s ease-in-out infinite;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
