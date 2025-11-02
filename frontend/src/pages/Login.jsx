@@ -36,12 +36,17 @@ const Login = ({ onLogin }) => {
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#0a0a0a' }}>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img 
-            src="https://customer-assets.emergentagent.com/job_25d84bc8-5cd6-4672-913d-7856f1b8c2dc/artifacts/7ukgfyx7_snr%20logo%20png.jpg"
-            alt="SNR Automations"
-            className="w-32 h-32 mx-auto mb-4 rounded-xl"
-            data-testid="snr-logo"
-          />
+          <div className="relative w-32 h-32 mx-auto mb-4">
+            <img 
+              src="https://customer-assets.emergentagent.com/job_25d84bc8-5cd6-4672-913d-7856f1b8c2dc/artifacts/7ukgfyx7_snr%20logo%20png.jpg"
+              alt="SNR Automations"
+              className="w-32 h-32 rounded-full border-4 border-[#FFD700] object-cover"
+              style={{
+                boxShadow: '0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 215, 0, 0.4), 0 0 60px rgba(255, 215, 0, 0.2)',
+              }}
+              data-testid="snr-logo"
+            />
+          </div>
           <h1 className="text-4xl font-bold snr-gradient bg-clip-text text-transparent mb-2">
             SNR AUTOMATIONS
           </h1>
