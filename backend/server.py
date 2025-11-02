@@ -38,7 +38,7 @@ class User(BaseModel):
     username: str
     password: str
     name: str
-    role: str  # Admin, Tech, Design, AI, Cloud, Research, Content, Intern
+    role: str  # Admin, COO, CTO, Project Manager, Tech, Design, AI, Cloud, Research, Content, Intern
     email: Optional[str] = None
     contact: Optional[str] = None
     skillset: Optional[List[str]] = []
