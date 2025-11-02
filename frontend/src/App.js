@@ -13,6 +13,8 @@ import CloudPanel from "./pages/CloudPanel";
 import ResearchHub from "./pages/ResearchHub";
 import AcademyZone from "./pages/AcademyZone";
 import PersonalPlanner from "./pages/PersonalPlanner";
+import Finance from "./pages/Finance";
+import Attendance from "./pages/Attendance";
 import { Toaster } from "sonner";
 
 function App() {
@@ -59,6 +61,8 @@ function App() {
           <Route path="/research" element={user ? <ResearchHub user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
           <Route path="/academy" element={user ? <AcademyZone user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
           <Route path="/planner" element={user ? <PersonalPlanner user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/finance" element={user ? <Finance user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/attendance" element={user ? <Attendance user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
     </div>
