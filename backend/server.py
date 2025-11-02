@@ -788,6 +788,22 @@ async def get_dashboard_stats(user_id: Optional[str] = None):
             {"_id": 0}
         ).sort("created_at", -1).limit(10).to_list(10)
         stats["assigned_tasks"] = my_assigned_tasks
+        
+        # Get kudos balance
+        kudos_transactions = await db.kudos_transactions.find({"user_id": user_id}, {"_id": 0}).to_list(10000)
+        total_kudos = sum(t["amount"] for t in kudos_transactions)
+        stats["kudos_balance"] = total_kudos
+        
+        # Get upcoming meetings
+        now = datetime.now(timezone.utc).isoformat()
+        upcoming_meetings = await db.meetings.find(
+            {
+                "$or": [{"organizer": user_id}, {"attendees": user_id}],
+                "start_time": {"$gte": now}
+            },
+            {"_id": 0}
+        ).sort("start_time", 1).limit(5).to_list(5)
+        stats["upcoming_meetings"] = upcoming_meetings
     
     # Recent activity
     recent_projects = await db.projects.find({}, {"_id": 0}).sort("created_at", -1).limit(5).to_list(5)
