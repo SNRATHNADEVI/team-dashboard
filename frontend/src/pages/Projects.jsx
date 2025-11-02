@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Plus, MoveRight, Edit, Users as UsersIcon } from 'lucide-react';
+import { Plus, Edit2, Users as UsersIcon } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -103,6 +103,7 @@ const Projects = ({ user, onLogout }) => {
     try {
       await axios.put(`${API}/projects/${projectId}`, { status: newStatus });
       fetchProjects();
+      toast.success('Project status updated');
     } catch (error) {
       toast.error('Failed to update project');
     }
@@ -113,214 +114,261 @@ const Projects = ({ user, onLogout }) => {
     return member ? member.name : 'Unknown';
   };
 
-  const KanbanColumn = ({ title, status, items, color }) => (
-    <div className="flex-shrink-0 w-[350px]">
-      <div className="mb-4 flex items-center space-x-2">
-        <div className="w-3 h-3 rounded-full" style={{ background: color }}></div>
-        <h3 className="font-bold text-white text-lg">{title}</h3>
-        <span className="text-sm text-gray-500">({items.length})</span>
-      </div>
-      <div className="space-y-3 max-h-[calc(100vh-280px)] overflow-y-auto pr-2">
-        {items.map((project) => (
-          <Card key={project.id} className="kanban-card glass-effect border-[rgba(255,215,0,0.1)] w-full" data-testid={`project-${project.id}`}>
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start gap-2">
-                <CardTitle className="text-white text-base flex-1 break-words">{project.name}</CardTitle>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleEdit(project)}
-                  className="text-blue-400 hover:text-blue-300 p-1 h-auto flex-shrink-0"
-                  data-testid={`edit-project-${project.id}`}
-                >
-                  <Edit size={16} />
-                </Button>
-              </div>
-              <p className="text-xs text-gray-400 mt-1">{project.type}</p>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-400 mb-3 line-clamp-2 break-words">{project.description}</p>
-              
-              {/* Progress Bar */}
-              <div className="mb-3">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>Progress</span>
-                  <span>{project.progress}%</span>
-                </div>
-                <div className="w-full bg-[rgba(255,255,255,0.05)] rounded-full h-2">
-                  <div
-                    className="h-2 rounded-full snr-gradient"
-                    style={{ width: `${project.progress}%` }}
-                  ></div>
-                </div>
-              </div>
-              
-              {/* Deadline */}
-              {project.deadline && (
-                <p className="text-xs text-gray-500 mb-3">
-                  Due: {new Date(project.deadline).toLocaleDateString()}
-                </p>
-              )}
-              
-              {/* Assigned Members */}
-              {project.assigned_members && project.assigned_members.length > 0 && (
-                <div className="mb-3">
-                  <div className="flex items-center space-x-1 mb-2">
-                    <UsersIcon size={12} className="text-gray-500" />
-                    <p className="text-xs text-gray-500">Assigned to:</p>
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {project.assigned_members.map((memberId, idx) => (
-                      <span
-                        key={idx}
-                        className="text-xs px-2 py-1 rounded bg-[rgba(255,215,0,0.1)] text-yellow-500 border border-[rgba(255,215,0,0.2)] break-words"
-                      >
-                        {getMemberName(memberId)}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Action Button */}
-              {status !== 'done' && (
-                <Button
-                  size="sm"
-                  onClick={() => moveProject(project.id, status === 'todo' ? 'doing' : 'done')}
-                  className="btn-primary w-full"
-                  data-testid={`move-project-${project.id}`}
-                >
-                  <MoveRight size={14} className="mr-1" />
-                  {status === 'todo' ? 'Start' : 'Complete'}
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
+  const statusConfig = {
+    todo: { title: 'To Do', color: '#6B7280', bgColor: 'rgba(107, 114, 128, 0.1)' },
+    doing: { title: 'In Progress', color: '#3B82F6', bgColor: 'rgba(59, 130, 246, 0.1)' },
+    done: { title: 'Completed', color: '#10B981', bgColor: 'rgba(16, 185, 129, 0.1)' },
+  };
 
   return (
     <Layout user={user} onLogout={onLogout}>
-      <div className="p-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-white mb-2" data-testid="projects-title">Project Management</h1>
-            <p className="text-base text-gray-400">Track and manage all your projects</p>
+      <div className="h-screen flex flex-col">
+        {/* Header */}
+        <div className="p-6 border-b border-[rgba(255,215,0,0.1)]">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-1" data-testid="projects-title">
+                Project Management
+              </h1>
+              <p className="text-sm text-gray-400">Track and manage all your projects</p>
+            </div>
+            <Dialog open={dialogOpen} onOpenChange={(open) => {
+              setDialogOpen(open);
+              if (!open) resetForm();
+            }}>
+              <DialogTrigger asChild>
+                <Button className="btn-primary" data-testid="create-project-button">
+                  <Plus size={18} className="mr-2" />
+                  New Project
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-[#1a1a1a] border-[rgba(255,215,0,0.2)] text-white max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="text-white">
+                    {editMode ? 'Edit Project' : 'Create New Project'}
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleCreate} className="space-y-4">
+                  <div>
+                    <Label className="text-gray-300">Project Name</Label>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                      className="bg-[rgba(255,255,255,0.05)] border-[rgba(255,215,0,0.2)] text-white"
+                      data-testid="project-name-input"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-gray-300">Description</Label>
+                    <Textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      rows={3}
+                      className="bg-[rgba(255,255,255,0.05)] border-[rgba(255,215,0,0.2)] text-white"
+                      data-testid="project-description-input"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-gray-300">Type</Label>
+                      <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+                        <SelectTrigger className="bg-[rgba(255,255,255,0.05)] border-[rgba(255,215,0,0.2)] text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#1a1a1a] border-[rgba(255,215,0,0.2)]">
+                          <SelectItem value="AI tools" className="text-white">AI tools</SelectItem>
+                          <SelectItem value="SaaS apps" className="text-white">SaaS apps</SelectItem>
+                          <SelectItem value="Academy content" className="text-white">Academy content</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-gray-300">Deadline</Label>
+                      <Input
+                        type="date"
+                        value={formData.deadline}
+                        onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                        className="bg-[rgba(255,255,255,0.05)] border-[rgba(255,215,0,0.2)] text-white"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-gray-300">Assign Team Members</Label>
+                    <Select
+                      value=""
+                      onValueChange={(value) => {
+                        const updatedMembers = formData.assigned_members.includes(value)
+                          ? formData.assigned_members.filter((id) => id !== value)
+                          : [...formData.assigned_members, value];
+                        setFormData({ ...formData, assigned_members: updatedMembers });
+                      }}
+                    >
+                      <SelectTrigger className="bg-[rgba(255,255,255,0.05)] border-[rgba(255,215,0,0.2)] text-white">
+                        <SelectValue placeholder="Select members" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1a1a1a] border-[rgba(255,215,0,0.2)]">
+                        {members.map((member) => (
+                          <SelectItem key={member.id} value={member.id} className="text-white">
+                            {member.name} • {member.role}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formData.assigned_members.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {formData.assigned_members.map((memberId) => (
+                          <span
+                            key={memberId}
+                            className="text-xs px-3 py-1 rounded-full bg-[rgba(255,215,0,0.15)] text-yellow-400 cursor-pointer hover:bg-[rgba(255,215,0,0.25)] transition-colors"
+                            onClick={() => {
+                              setFormData({
+                                ...formData,
+                                assigned_members: formData.assigned_members.filter((id) => id !== memberId),
+                              });
+                            }}
+                          >
+                            {getMemberName(memberId)} ✕
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <Button type="submit" className="w-full btn-primary" data-testid="submit-project-button">
+                    {editMode ? 'Update Project' : 'Create Project'}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
+        </div>
 
-          <Dialog open={dialogOpen} onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) resetForm();
-          }}>
-            <DialogTrigger asChild>
-              <Button className="btn-primary" data-testid="create-project-button">
-                <Plus size={18} className="mr-2" />
-                New Project
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-[#1a1a1a] border-[rgba(255,215,0,0.2)] text-white max-w-2xl">
-              <DialogHeader>
-                <DialogTitle className="text-white">
-                  {editMode ? 'Edit Project' : 'Create New Project'}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleCreate} className="space-y-4">
-                <div>
-                  <Label className="text-gray-300">Project Name</Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                    className="bg-[rgba(255,255,255,0.05)] border-[rgba(255,215,0,0.2)] text-white"
-                    data-testid="project-name-input"
-                  />
+        {/* Kanban Board */}
+        <div className="flex-1 overflow-hidden p-6">
+          <div className="h-full flex gap-6">
+            {Object.entries(statusConfig).map(([status, config]) => (
+              <div key={status} className="flex-1 flex flex-col min-w-0">
+                {/* Column Header */}
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 rounded-full" style={{ background: config.color }}></div>
+                  <h3 className="font-semibold text-white">{config.title}</h3>
+                  <span className="text-xs text-gray-500 px-2 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)]">
+                    {projects[status].length}
+                  </span>
                 </div>
-                <div>
-                  <Label className="text-gray-300">Description</Label>
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="bg-[rgba(255,255,255,0.05)] border-[rgba(255,215,0,0.2)] text-white"
-                    data-testid="project-description-input"
-                  />
-                </div>
-                <div>
-                  <Label className="text-gray-300">Type</Label>
-                  <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
-                    <SelectTrigger className="bg-[rgba(255,255,255,0.05)] border-[rgba(255,215,0,0.2)] text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1a1a1a] border-[rgba(255,215,0,0.2)]">
-                      <SelectItem value="AI tools" className="text-white">AI tools</SelectItem>
-                      <SelectItem value="SaaS apps" className="text-white">SaaS apps</SelectItem>
-                      <SelectItem value="Academy content" className="text-white">Academy content</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-gray-300">Assign Team Members</Label>
-                  <Select
-                    value={formData.assigned_members[0] || ''}
-                    onValueChange={(value) => {
-                      const updatedMembers = formData.assigned_members.includes(value)
-                        ? formData.assigned_members.filter((id) => id !== value)
-                        : [...formData.assigned_members, value];
-                      setFormData({ ...formData, assigned_members: updatedMembers });
-                    }}
-                  >
-                    <SelectTrigger className="bg-[rgba(255,255,255,0.05)] border-[rgba(255,215,0,0.2)] text-white">
-                      <SelectValue placeholder="Select members" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1a1a1a] border-[rgba(255,215,0,0.2)]">
-                      {members.map((member) => (
-                        <SelectItem key={member.id} value={member.id} className="text-white">
-                          {member.name} ({member.role})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {formData.assigned_members.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {formData.assigned_members.map((memberId) => (
-                        <span
-                          key={memberId}
-                          className="text-xs px-2 py-1 rounded bg-[rgba(255,215,0,0.2)] text-yellow-500 cursor-pointer"
-                          onClick={() => {
-                            setFormData({
-                              ...formData,
-                              assigned_members: formData.assigned_members.filter((id) => id !== memberId),
-                            });
-                          }}
-                        >
-                          {getMemberName(memberId)} ✕
-                        </span>
-                      ))}
+
+                {/* Cards Container */}
+                <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                  {projects[status].map((project) => (
+                    <Card
+                      key={project.id}
+                      className="glass-effect border-[rgba(255,215,0,0.1)] hover:border-[rgba(255,215,0,0.3)] transition-all"
+                      data-testid={`project-${project.id}`}
+                    >
+                      <CardContent className="p-4">
+                        {/* Project Header */}
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <h4 className="font-semibold text-white text-sm leading-tight flex-1">
+                            {project.name}
+                          </h4>
+                          <button
+                            onClick={() => handleEdit(project)}
+                            className="text-gray-400 hover:text-blue-400 transition-colors flex-shrink-0"
+                            data-testid={`edit-project-${project.id}`}
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                        </div>
+
+                        {/* Project Type */}
+                        <div className="mb-3">
+                          <span className="text-xs px-2 py-1 rounded bg-[rgba(255,255,255,0.05)] text-gray-400">
+                            {project.type}
+                          </span>
+                        </div>
+
+                        {/* Description */}
+                        {project.description && (
+                          <p className="text-xs text-gray-400 mb-3 line-clamp-2">
+                            {project.description}
+                          </p>
+                        )}
+
+                        {/* Progress Bar */}
+                        <div className="mb-3">
+                          <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+                            <span>Progress</span>
+                            <span className="font-medium">{project.progress}%</span>
+                          </div>
+                          <div className="w-full bg-[rgba(255,255,255,0.05)] rounded-full h-1.5">
+                            <div
+                              className="h-1.5 rounded-full snr-gradient transition-all"
+                              style={{ width: `${project.progress}%` }}
+                            ></div>
+                          </div>
+                        </div>
+
+                        {/* Deadline */}
+                        {project.deadline && (
+                          <p className="text-xs text-gray-500 mb-3">
+                            📅 {new Date(project.deadline).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </p>
+                        )}
+
+                        {/* Assigned Members */}
+                        {project.assigned_members && project.assigned_members.length > 0 && (
+                          <div className="mb-3 pb-3 border-b border-[rgba(255,255,255,0.05)]">
+                            <div className="flex items-center gap-1 mb-2">
+                              <UsersIcon size={12} className="text-gray-500" />
+                              <span className="text-xs text-gray-500">Team:</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {project.assigned_members.map((memberId, idx) => (
+                                <span
+                                  key={idx}
+                                  className="text-xs px-2 py-1 rounded-full bg-[rgba(255,215,0,0.1)] text-yellow-500 border border-[rgba(255,215,0,0.2)]"
+                                >
+                                  {getMemberName(memberId).split(' ')[0]}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Action Button */}
+                        {status !== 'done' && (
+                          <Button
+                            size="sm"
+                            onClick={() => moveProject(project.id, status === 'todo' ? 'doing' : 'done')}
+                            className="w-full btn-primary text-xs"
+                            data-testid={`move-project-${project.id}`}
+                          >
+                            {status === 'todo' ? '▶ Start Project' : '✓ Mark Complete'}
+                          </Button>
+                        )}
+
+                        {status === 'done' && (
+                          <div className="text-center py-2 bg-green-500/10 text-green-400 rounded text-xs font-medium">
+                            ✓ Completed
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+
+                  {projects[status].length === 0 && (
+                    <div className="text-center py-12 text-gray-500 text-sm">
+                      No projects in {config.title.toLowerCase()}
                     </div>
                   )}
                 </div>
-                <div>
-                  <Label className="text-gray-300">Deadline</Label>
-                  <Input
-                    type="date"
-                    value={formData.deadline}
-                    onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                    className="bg-[rgba(255,255,255,0.05)] border-[rgba(255,215,0,0.2)] text-white"
-                  />
-                </div>
-                <Button type="submit" className="w-full btn-primary" data-testid="submit-project-button">
-                  {editMode ? 'Update Project' : 'Create Project'}
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        <div className="flex gap-4 overflow-x-auto pb-4" style={{ maxWidth: 'calc(100vw - 320px)' }}>
-          <KanbanColumn title="To Do" status="todo" items={projects.todo} color="#6B7280" />
-          <KanbanColumn title="In Progress" status="doing" items={projects.doing} color="#3B82F6" />
-          <KanbanColumn title="Completed" status="done" items={projects.done} color="#10B981" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </Layout>
