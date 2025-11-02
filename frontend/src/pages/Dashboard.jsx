@@ -30,7 +30,7 @@ const Dashboard = ({ user, onLogout }) => {
     { title: 'Total Projects', value: stats?.total_projects || 0, icon: FolderKanban, color: '#3B82F6' },
     { title: 'Total Tasks', value: stats?.total_tasks || 0, icon: CheckCircle, color: '#10B981' },
     { title: 'Team Members', value: stats?.total_members || 0, icon: Users, color: '#F59E0B' },
-    { title: 'Pending Leaves', value: stats?.pending_leaves || 0, icon: Clock, color: '#EF4444' },
+    { title: 'Kudos Balance', value: stats?.kudos_balance || 0, icon: Users, color: '#FFD700' },
   ];
 
   if (user.role !== 'Admin') {
