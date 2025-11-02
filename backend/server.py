@@ -45,6 +45,18 @@ class User(BaseModel):
     current_tasks: Optional[List[str]] = []
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
+class UserResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    username: str
+    name: str
+    role: str
+    email: Optional[str] = None
+    contact: Optional[str] = None
+    skillset: Optional[List[str]] = []
+    current_tasks: Optional[List[str]] = []
+    created_at: str
+
 class UserCreate(BaseModel):
     username: str
     password: str
