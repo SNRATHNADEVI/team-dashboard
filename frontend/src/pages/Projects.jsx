@@ -317,7 +317,7 @@ const Projects = ({ user, onLogout }) => {
           </Dialog>
         </div>
 
-        <div className="flex gap-6 overflow-x-auto pb-4">
+        <div className="flex gap-4 overflow-x-auto pb-4" style={{ maxWidth: 'calc(100vw - 320px)' }}>
           <KanbanColumn title="To Do" status="todo" items={projects.todo} color="#6B7280" />
           <KanbanColumn title="In Progress" status="doing" items={projects.doing} color="#3B82F6" />
           <KanbanColumn title="Completed" status="done" items={projects.done} color="#10B981" />
