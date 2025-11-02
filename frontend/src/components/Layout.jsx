@@ -11,7 +11,9 @@ import {
   BookOpen, 
   GraduationCap, 
   ClipboardList,
-  LogOut
+  LogOut,
+  Clock,
+  DollarSign
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
