@@ -53,6 +53,9 @@ const Layout = ({ children, user, onLogout }) => {
 
         <nav className="space-y-1">
           {menuItems.map((item) => {
+            // Hide Finance from non-admin users
+            if (item.adminOnly && user.role !== 'Admin') return null;
+            
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return (
