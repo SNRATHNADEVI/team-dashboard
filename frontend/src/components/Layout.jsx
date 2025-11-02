@@ -68,15 +68,17 @@ const Layout = ({ children, user, onLogout }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
+                className={`flex items-center px-4 py-3 rounded-lg transition-all ${
                   isActive
                     ? 'sidebar-active text-yellow-500'
                     : 'text-gray-400 hover:text-white hover:bg-[rgba(255,215,0,0.05)]'
                 }`}
                 data-testid={`nav-${item.label.toLowerCase()}`}
               >
-                <Icon size={20} />
-                <span className="text-sm font-medium">{item.label}</span>
+                <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                  <Icon size={20} />
+                </div>
+                <span className="text-sm font-medium ml-3">{item.label}</span>
               </Link>
             );
           })}
@@ -85,12 +87,14 @@ const Layout = ({ children, user, onLogout }) => {
         <div className="absolute bottom-4 left-4 right-4">
           <Button
             onClick={onLogout}
+            className="w-full flex items-center justify-center border-[rgba(255,215,0,0.3)] text-yellow-500 hover:bg-[rgba(255,215,0,0.1)] px-4 py-3"
             variant="outline"
-            className="w-full border-[rgba(255,215,0,0.3)] text-yellow-500 hover:bg-[rgba(255,215,0,0.1)]"
             data-testid="logout-button"
           >
-            <LogOut size={16} className="mr-2" />
-            Logout
+            <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+              <LogOut size={20} />
+            </div>
+            <span className="text-sm font-medium ml-3">Logout</span>
           </Button>
         </div>
       </aside>
