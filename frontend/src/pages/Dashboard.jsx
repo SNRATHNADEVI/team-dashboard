@@ -76,6 +76,45 @@ const Dashboard = ({ user, onLogout }) => {
 
             {/* Recent Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Assigned Tasks */}
+              {stats?.assigned_tasks && stats.assigned_tasks.length > 0 && (
+                <Card className="glass-effect border-[rgba(255,215,0,0.1)]" data-testid="assigned-tasks-card">
+                  <CardHeader>
+                    <CardTitle className="text-white">My Assigned Tasks</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {stats.assigned_tasks.map((task) => (
+                        <div
+                          key={task.id}
+                          className="p-4 rounded-lg bg-[rgba(255,255,255,0.03)] border border-[rgba(255,215,0,0.1)]"
+                        >
+                          <h4 className="font-semibold text-white mb-1">{task.title}</h4>
+                          <p className="text-sm text-gray-400 mb-2">{task.description || 'No description'}</p>
+                          <div className="flex items-center justify-between text-xs">
+                            <span
+                              className={`px-2 py-1 rounded ${
+                                task.priority === 'high'
+                                  ? 'bg-red-500/20 text-red-400'
+                                  : task.priority === 'medium'
+                                  ? 'bg-yellow-500/20 text-yellow-400'
+                                  : 'bg-gray-500/20 text-gray-400'
+                              }`}
+                            >
+                              {task.priority}
+                            </span>
+                            {task.due_date && (
+                              <span className="text-gray-500">Due: {new Date(task.due_date).toLocaleDateString()}</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Recent Projects */}
               <Card className="glass-effect border-[rgba(255,215,0,0.1)]" data-testid="recent-projects-card">
                 <CardHeader>
                   <CardTitle className="text-white">Recent Projects</CardTitle>
@@ -112,44 +151,43 @@ const Dashboard = ({ user, onLogout }) => {
                   )}
                 </CardContent>
               </Card>
+            </div>
 
-              <Card className="glass-effect border-[rgba(255,215,0,0.1)]" data-testid="recent-tasks-card">
+            {/* Recent Tasks Section */}
+            {stats?.recent_tasks && stats.recent_tasks.length > 0 && (
+              <Card className="glass-effect border-[rgba(255,215,0,0.1)] mt-6" data-testid="recent-tasks-card">
                 <CardHeader>
-                  <CardTitle className="text-white">Recent Tasks</CardTitle>
+                  <CardTitle className="text-white">All Recent Tasks</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {stats?.recent_tasks?.length > 0 ? (
-                    <div className="space-y-3">
-                      {stats.recent_tasks.map((task) => (
-                        <div
-                          key={task.id}
-                          className="p-4 rounded-lg bg-[rgba(255,255,255,0.03)] border border-[rgba(255,215,0,0.1)]"
-                        >
-                          <h4 className="font-semibold text-white mb-1">{task.title}</h4>
-                          <p className="text-sm text-gray-400 mb-2">{task.description || 'No description'}</p>
-                          <div className="flex items-center justify-between text-xs">
-                            <span
-                              className={`px-2 py-1 rounded ${
-                                task.priority === 'high'
-                                  ? 'bg-red-500/20 text-red-400'
-                                  : task.priority === 'medium'
-                                  ? 'bg-yellow-500/20 text-yellow-400'
-                                  : 'bg-gray-500/20 text-gray-400'
-                              }`}
-                            >
-                              {task.priority}
-                            </span>
-                            <span className="text-gray-500">{task.status}</span>
-                          </div>
+                  <div className="space-y-3">
+                    {stats.recent_tasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="p-4 rounded-lg bg-[rgba(255,255,255,0.03)] border border-[rgba(255,215,0,0.1)]"
+                      >
+                        <h4 className="font-semibold text-white mb-1">{task.title}</h4>
+                        <p className="text-sm text-gray-400 mb-2">{task.description || 'No description'}</p>
+                        <div className="flex items-center justify-between text-xs">
+                          <span
+                            className={`px-2 py-1 rounded ${
+                              task.priority === 'high'
+                                ? 'bg-red-500/20 text-red-400'
+                                : task.priority === 'medium'
+                                ? 'bg-yellow-500/20 text-yellow-400'
+                                : 'bg-gray-500/20 text-gray-400'
+                            }`}
+                          >
+                            {task.priority}
+                          </span>
+                          <span className="text-gray-500">{task.status}</span>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-sm">No recent tasks</p>
-                  )}
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
-            </div>
+            )}
           </>
         )}
       </div>
