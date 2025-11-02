@@ -45,7 +45,7 @@ const Dashboard = ({ user, onLogout }) => {
       <div className="p-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white mb-2" data-testid="dashboard-title">
-            Welcome back, {user.name} \ud83d\udc4b
+            Welcome back, {user.name}
           </h1>
           <p className="text-base text-gray-400">Here's what's happening in your workspace</p>
         </div>
