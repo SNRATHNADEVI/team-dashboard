@@ -30,10 +30,12 @@ const Layout = ({ children, user, onLogout }) => {
     { path: '/attendance', icon: Clock, label: 'Attendance' },
     { path: '/leave', icon: Plane, label: 'Leave' },
     { path: '/content', icon: Video, label: 'Content' },
+    { path: '/training', icon: Award, label: 'Training' },
     { path: '/ai-lab', icon: Brain, label: 'AI Lab' },
     { path: '/cloud', icon: Cloud, label: 'Cloud' },
     { path: '/research', icon: BookOpen, label: 'Research' },
     { path: '/academy', icon: GraduationCap, label: 'Academy' },
+    { path: '/subscriptions', icon: Key, label: 'Subscriptions' },
     { path: '/finance', icon: DollarSign, label: 'Finance', adminOnly: true },
     { path: '/planner', icon: ClipboardList, label: 'Planner' },
   ];
