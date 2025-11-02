@@ -76,6 +76,36 @@ const Dashboard = ({ user, onLogout }) => {
 
             {/* Recent Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Upcoming Meetings */}
+              {stats?.upcoming_meetings && stats.upcoming_meetings.length > 0 && (
+                <Card className="glass-effect border-[rgba(255,215,0,0.1)]" data-testid="upcoming-meetings-card">
+                  <CardHeader>
+                    <CardTitle className="text-white">Upcoming Meetings</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {stats.upcoming_meetings.map((meeting) => (
+                        <div
+                          key={meeting.id}
+                          className="p-4 rounded-lg bg-[rgba(255,255,255,0.03)] border border-[rgba(255,215,0,0.1)]"
+                        >
+                          <h4 className="font-semibold text-white mb-1">{meeting.title}</h4>
+                          <p className="text-sm text-gray-400 mb-2">{meeting.agenda}</p>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-500">
+                              {new Date(meeting.start_time).toLocaleString()}
+                            </span>
+                            <span className="px-2 py-1 rounded bg-[rgba(59,130,246,0.2)] text-blue-400">
+                              {meeting.meeting_type}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Assigned Tasks */}
               {stats?.assigned_tasks && stats.assigned_tasks.length > 0 && (
                 <Card className="glass-effect border-[rgba(255,215,0,0.1)]" data-testid="assigned-tasks-card">
