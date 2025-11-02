@@ -23,12 +23,14 @@ const Layout = ({ children, user, onLogout }) => {
     { path: '/team', icon: Users, label: 'Team' },
     { path: '/projects', icon: FolderKanban, label: 'Projects' },
     { path: '/calendar', icon: CalendarIcon, label: 'Calendar' },
+    { path: '/attendance', icon: Clock, label: 'Attendance' },
     { path: '/leave', icon: Plane, label: 'Leave' },
     { path: '/content', icon: Video, label: 'Content' },
     { path: '/ai-lab', icon: Brain, label: 'AI Lab' },
     { path: '/cloud', icon: Cloud, label: 'Cloud' },
     { path: '/research', icon: BookOpen, label: 'Research' },
     { path: '/academy', icon: GraduationCap, label: 'Academy' },
+    { path: '/finance', icon: DollarSign, label: 'Finance', adminOnly: true },
     { path: '/planner', icon: ClipboardList, label: 'Planner' },
   ];
 
