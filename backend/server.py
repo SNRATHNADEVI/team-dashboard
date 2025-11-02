@@ -257,6 +257,78 @@ class CloudServiceCreate(BaseModel):
     name: str
     environment: str
 
+
+# Finance Models
+class FinanceTransaction(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    type: str  # income, expense, salary
+    category: str  # software, marketing, content, operational, salary, revenue
+    amount: float
+    description: str
+    date: str
+    payment_method: Optional[str] = None
+    receipt_url: Optional[str] = None
+    paid_to: Optional[str] = None  # For salary payments
+    status: str = "completed"  # pending, completed
+    created_by: str
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class FinanceTransactionCreate(BaseModel):
+    type: str
+    category: str
+    amount: float
+    description: str
+    date: str
+    payment_method: Optional[str] = None
+    receipt_url: Optional[str] = None
+    paid_to: Optional[str] = None
+    status: str = "completed"
+    created_by: str
+
+class SalaryRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    user_name: str
+    month: str  # YYYY-MM format
+    base_salary: float
+    deductions: float = 0.0
+    bonuses: float = 0.0
+    net_salary: float
+    status: str = "pending"  # pending, paid
+    payment_date: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class SalaryRecordCreate(BaseModel):
+    user_id: str
+    user_name: str
+    month: str
+    base_salary: float
+    deductions: float = 0.0
+    bonuses: float = 0.0
+
+# Attendance Models
+class AttendanceRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    user_name: str
+    date: str
+    check_in: Optional[str] = None
+    check_out: Optional[str] = None
+    total_hours: Optional[float] = None
+    status: str = "present"  # present, absent, leave, half_day
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class AttendanceCheckIn(BaseModel):
+    user_id: str
+    user_name: str
+
+class AttendanceCheckOut(BaseModel):
+    user_id: str
+    date: str
+
 # ========== AUTH ENDPOINTS ==========
 
 @api_router.post("/auth/login")
