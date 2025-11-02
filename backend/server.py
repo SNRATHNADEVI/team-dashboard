@@ -683,6 +683,183 @@ async def get_dashboard_stats(user_id: Optional[str] = None):
     
     return stats
 
+
+# ========== FINANCE MODULE ==========
+
+@api_router.get("/finance/transactions", response_model=List[FinanceTransaction])
+async def get_finance_transactions():
+    transactions = await db.finance_transactions.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return transactions
+
+@api_router.post("/finance/transactions", response_model=FinanceTransaction)
+async def create_finance_transaction(transaction_data: FinanceTransactionCreate):
+    transaction_obj = FinanceTransaction(**transaction_data.model_dump())
+    doc = transaction_obj.model_dump()
+    await db.finance_transactions.insert_one(doc)
+    return transaction_obj
+
+@api_router.get("/finance/summary")
+async def get_finance_summary():
+    # Get all transactions
+    transactions = await db.finance_transactions.find({}, {"_id": 0}).to_list(10000)
+    
+    total_income = sum(t["amount"] for t in transactions if t["type"] == "income")
+    total_expenses = sum(t["amount"] for t in transactions if t["type"] == "expense")
+    total_salary = sum(t["amount"] for t in transactions if t["type"] == "salary")
+    
+    # Category breakdown
+    categories = {}
+    for t in transactions:
+        if t["type"] == "expense":
+            category = t["category"]
+            categories[category] = categories.get(category, 0) + t["amount"]
+    
+    # Recent transactions
+    recent = sorted(transactions, key=lambda x: x["created_at"], reverse=True)[:10]
+    
+    # Pending salary payments
+    pending_salaries = await db.salary_records.count_documents({"status": "pending"})
+    
+    return {
+        "total_income": total_income,
+        "total_expenses": total_expenses,
+        "total_salary": total_salary,
+        "net_balance": total_income - total_expenses - total_salary,
+        "expense_by_category": categories,
+        "recent_transactions": recent,
+        "pending_salary_payments": pending_salaries
+    }
+
+@api_router.delete("/finance/transactions/{transaction_id}")
+async def delete_transaction(transaction_id: str):
+    result = await db.finance_transactions.delete_one({"id": transaction_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    return {"message": "Transaction deleted successfully"}
+
+# Salary Management
+@api_router.get("/finance/salaries", response_model=List[SalaryRecord])
+async def get_salary_records():
+    salaries = await db.salary_records.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return salaries
+
+@api_router.post("/finance/salaries", response_model=SalaryRecord)
+async def create_salary_record(salary_data: SalaryRecordCreate):
+    # Calculate net salary
+    net_salary = salary_data.base_salary - salary_data.deductions + salary_data.bonuses
+    
+    salary_dict = salary_data.model_dump()
+    salary_dict["net_salary"] = net_salary
+    
+    salary_obj = SalaryRecord(**salary_dict)
+    doc = salary_obj.model_dump()
+    await db.salary_records.insert_one(doc)
+    return salary_obj
+
+@api_router.put("/finance/salaries/{salary_id}")
+async def update_salary_status(salary_id: str, status: str, payment_date: Optional[str] = None):
+    update_data = {"status": status}
+    if payment_date:
+        update_data["payment_date"] = payment_date
+    
+    result = await db.salary_records.update_one({"id": salary_id}, {"$set": update_data})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Salary record not found")
+    return {"message": "Salary status updated successfully"}
+
+# ========== ATTENDANCE MODULE ==========
+
+@api_router.post("/attendance/check-in")
+async def check_in(data: AttendanceCheckIn):
+    today = datetime.now(timezone.utc).date().isoformat()
+    
+    # Check if already checked in today
+    existing = await db.attendance.find_one({"user_id": data.user_id, "date": today})
+    if existing and existing.get("check_in"):
+        raise HTTPException(status_code=400, detail="Already checked in today")
+    
+    check_in_time = datetime.now(timezone.utc).isoformat()
+    
+    if existing:
+        # Update existing record
+        await db.attendance.update_one(
+            {"user_id": data.user_id, "date": today},
+            {"$set": {"check_in": check_in_time}}
+        )
+    else:
+        # Create new record
+        attendance_obj = AttendanceRecord(
+            user_id=data.user_id,
+            user_name=data.user_name,
+            date=today,
+            check_in=check_in_time,
+            status="present"
+        )
+        doc = attendance_obj.model_dump()
+        await db.attendance.insert_one(doc)
+    
+    return {"message": "Checked in successfully", "time": check_in_time}
+
+@api_router.post("/attendance/check-out")
+async def check_out(data: AttendanceCheckOut):
+    record = await db.attendance.find_one({"user_id": data.user_id, "date": data.date})
+    if not record:
+        raise HTTPException(status_code=404, detail="No check-in record found for today")
+    
+    if record.get("check_out"):
+        raise HTTPException(status_code=400, detail="Already checked out")
+    
+    check_out_time = datetime.now(timezone.utc).isoformat()
+    
+    # Calculate total hours
+    check_in_dt = datetime.fromisoformat(record["check_in"])
+    check_out_dt = datetime.fromisoformat(check_out_time)
+    total_hours = (check_out_dt - check_in_dt).total_seconds() / 3600
+    
+    await db.attendance.update_one(
+        {"user_id": data.user_id, "date": data.date},
+        {"$set": {"check_out": check_out_time, "total_hours": round(total_hours, 2)}}
+    )
+    
+    return {"message": "Checked out successfully", "time": check_out_time, "total_hours": round(total_hours, 2)}
+
+@api_router.get("/attendance/records")
+async def get_attendance_records(user_id: Optional[str] = None, month: Optional[str] = None):
+    query = {}
+    if user_id:
+        query["user_id"] = user_id
+    if month:
+        # Filter by month (YYYY-MM format)
+        query["date"] = {"$regex": f"^{month}"}
+    
+    records = await db.attendance.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
+    return records
+
+@api_router.get("/attendance/summary")
+async def get_attendance_summary(user_id: Optional[str] = None):
+    query = {}
+    if user_id:
+        query["user_id"] = user_id
+    
+    records = await db.attendance.find(query, {"_id": 0}).to_list(10000)
+    
+    total_days = len(records)
+    present_days = len([r for r in records if r["status"] == "present"])
+    absent_days = len([r for r in records if r["status"] == "absent"])
+    leave_days = len([r for r in records if r["status"] == "leave"])
+    
+    total_hours = sum(r.get("total_hours", 0) for r in records if r.get("total_hours"))
+    
+    return {
+        "total_days": total_days,
+        "present_days": present_days,
+        "absent_days": absent_days,
+        "leave_days": leave_days,
+        "total_hours_worked": round(total_hours, 2),
+        "average_hours_per_day": round(total_hours / present_days, 2) if present_days > 0 else 0
+    }
+
+
 # ========== GOOGLE CALENDAR SYNC ==========
 
 async def sync_to_google_calendar(event_data: CalendarEventCreate):
