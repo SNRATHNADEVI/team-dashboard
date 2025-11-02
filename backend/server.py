@@ -329,6 +329,121 @@ class AttendanceCheckOut(BaseModel):
     user_id: str
     date: str
 
+
+# Kudos System Models
+class KudosTransaction(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    user_name: str
+    amount: int  # Can be positive or negative
+    reason: str
+    category: str  # task_completion, meeting_attendance, training_completion, manual
+    given_by: str
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class KudosTransactionCreate(BaseModel):
+    user_id: str
+    user_name: str
+    amount: int
+    reason: str
+    category: str
+    given_by: str
+
+# Training Section Models
+class TrainingCourse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    description: Optional[str] = None
+    instructor: Optional[str] = None
+    video_url: Optional[str] = None
+    files: List[str] = []  # URLs to uploaded files
+    homework_tasks: List[str] = []
+    kudos_reward: int = 0
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class TrainingCourseCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    instructor: Optional[str] = None
+    video_url: Optional[str] = None
+    homework_tasks: List[str] = []
+    kudos_reward: int = 0
+
+class TrainingProgress(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    course_id: str
+    user_id: str
+    user_name: str
+    progress: int = 0  # Percentage
+    completed: bool = False
+    homework_submitted: bool = False
+    homework_url: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class TrainingProgressUpdate(BaseModel):
+    progress: int
+    homework_submitted: Optional[bool] = None
+    homework_url: Optional[str] = None
+
+# Meeting Models
+class Meeting(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    agenda: str
+    start_time: str
+    end_time: str
+    organizer: str
+    attendees: List[str] = []
+    meeting_type: str = "team"  # personal, team
+    attendance_tracked: bool = False
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class MeetingCreate(BaseModel):
+    title: str
+    agenda: str
+    start_time: str
+    end_time: str
+    organizer: str
+    attendees: List[str] = []
+    meeting_type: str = "team"
+
+class MeetingAttendance(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    meeting_id: str
+    user_id: str
+    user_name: str
+    status: str  # present, absent
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class MeetingAttendanceCreate(BaseModel):
+    meeting_id: str
+    attendees_present: List[str]  # List of user IDs who attended
+
+# Subscription Models
+class Subscription(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    platform: str
+    username: Optional[str] = None
+    password: Optional[str] = None
+    is_active: bool = True
+    renewal_date: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class SubscriptionCreate(BaseModel):
+    platform: str
+    username: Optional[str] = None
+    password: Optional[str] = None
+    is_active: bool = True
+    renewal_date: Optional[str] = None
+    notes: Optional[str] = None
+
 # ========== AUTH ENDPOINTS ==========
 
 @api_router.post("/auth/login")
